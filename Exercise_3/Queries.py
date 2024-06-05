@@ -1,122 +1,131 @@
 import pandas as pd
 import sqlite3
 
-# Cargar el archivo Excel
-file_path = "SQL_TEST.xlsx"
-xls = pd.ExcelFile(file_path)
+def execute_queries():
+    """
+    Executes three SQL queries on an SQLite database using data from an Excel file.
 
-# Conectar a una base de datos SQLite en memoria
-conn = sqlite3.connect(':memory:')
+    Returns:
+        result1 (DataFrame): Result of Query 1.
+        result2 (DataFrame): Result of Query 2.
+        result3 (DataFrame): Result of Query 3.
+    """
 
-# Definir las filas donde comienzan y terminan las tablas y las columnas que se deben leer
-table_ranges = {
-    'Customer': ((2, 12), "B:F"),  # La tabla 'Customer comienza en la fila 3 y termina en la fila 13, y las columnas van de B a F
-    'Product': ((2, 24), "I:P"),  # La tabla 'Product' comienza en la fila 3 y termina en la fila 13, y las columnas van de I a P
-    'Station': ((2, 10), "R:T")  # La tabla 'Station' comienza en la fila 3 y termina en la fila 13, y las columnas van de R a T
-}
+    # Cargar el archivo Excel
+    file_path = "SQL_TEST.xlsx"
+    xls = pd.ExcelFile(file_path)
 
-for table_name, ((start_row, end_row), cols) in table_ranges.items():
-    # Tomar el primer carácter del rango de columnas como la columna del nombre de la tabla
-    table_col = cols[0]
+    # Conectar a una base de datos SQLite en memoria
+    conn = sqlite3.connect(':memory:')
 
-    # Cargar el nombre de la tabla de la celda correcta
-    table_name = xls.parse('SQL', header=None, nrows=1, skiprows=start_row-1, usecols=table_col).iloc[0,0]
+    # Definir las filas donde comienzan y terminan las tablas y las columnas que se deben leer
+    table_ranges = {
+        'Customer': ((2, 12), "B:F"),  # La tabla 'Customer comienza en la fila 3 y termina en la fila 13, y las columnas van de B a F
+        'Product': ((2, 24), "I:P"),  # La tabla 'Product' comienza en la fila 3 y termina en la fila 13, y las columnas van de I a P
+        'Station': ((2, 10), "R:T")  # La tabla 'Station' comienza en la fila 3 y termina en la fila 13, y las columnas van de R a T
+    }
 
-    # Verificar que el nombre de la tabla no sea "nan"
-    if pd.isnull(table_name):
-        print(f"El nombre de la tabla en la fila {start_row} es 'nan', se saltará esta tabla.")
-        continue
+    for table_name, ((start_row, end_row), cols) in table_ranges.items():
+        # Tomar el primer carácter del rango de columnas como la columna del nombre de la tabla
+        table_col = cols[0]
 
-    # Cargar los nombres de las columnas de la fila siguiente
-    column_names = xls.parse('SQL', header=None, nrows=1, skiprows=start_row, usecols=cols).iloc[0].tolist()
+        # Cargar el nombre de la tabla de la celda correcta
+        table_name = xls.parse('SQL', header=None, nrows=1, skiprows=start_row-1, usecols=table_col).iloc[0,0]
 
-    # Cargar los datos de la tabla
-    df = xls.parse('SQL', header=None, skiprows=start_row+1, nrows=end_row-start_row, usecols=cols)
+        # Verificar que el nombre de la tabla no sea "nan"
+        if pd.isnull(table_name):
+            print(f"El nombre de la tabla en la fila {start_row} es 'nan', se saltará esta tabla.")
+            continue
 
-    # Asignar los nombres de las columnas al DataFrame
-    df.columns = column_names
+        # Cargar los nombres de las columnas de la fila siguiente
+        column_names = xls.parse('SQL', header=None, nrows=1, skiprows=start_row, usecols=cols).iloc[0].tolist()
 
-    # Importar los datos del DataFrame a la tabla en la base de datos SQLite
-    df.to_sql(table_name, conn, if_exists='append', index=False)
+        # Cargar los datos de la tabla
+        df = xls.parse('SQL', header=None, skiprows=start_row+1, nrows=end_row-start_row, usecols=cols)
 
-'''
-# Verificar las tablas cargadas
-query = "SELECT name FROM sqlite_master WHERE type='table';"
-tables = pd.read_sql(query, conn)
-print(tables)
-'''
+        # Asignar los nombres de las columnas al DataFrame
+        df.columns = column_names
 
-# Definir las consultas
-query1 = """
-WITH PurchasesCount AS (
-    SELECT
-        Customer.Name,
-        Customer.LastName,
-        Station.Region,
-        COUNT(*) AS Amount
-    FROM
-        Customer
-    JOIN
-        Product ON Customer.Customerid = Product.Customerid
-    JOIN
-        Station ON Product.Stationid = Station.Stationid
-    WHERE
-        Station.Region IN ('MX', 'USA')
-    GROUP BY
-        Customer.Name, Customer.LastName, Station.Region
-),
-TopCustomers AS (
-    SELECT
-        *,
-        RANK() OVER (PARTITION BY Region ORDER BY Amount DESC) AS Rank
-    FROM
-        PurchasesCount
-)
-SELECT DISTINCT
-    Name,
-    LastName,
-    Region,
-    Amount
-FROM
-    TopCustomers
-WHERE
-    Rank = 1;
-"""
+        # Importar los datos del DataFrame a la tabla en la base de datos SQLite
+        df.to_sql(table_name, conn, if_exists='append', index=False)
 
-query2 = """
-SELECT DISTINCT
-    Customer.Email
-FROM
-    Customer
-JOIN
-    Product ON Customer.Customerid = Product.Customerid
-WHERE
-    Customer.Gender = 1
-    AND Product.Amount > 100;
-"""
+    # Definir las consultas
+    # Query 1: Obtiene el nombre y apellido del cliente que ha realizado más compras en cada región (MX y USA)
+    query1 = """
+        WITH PurchasesCount AS (
+            SELECT
+                Customer.Name,
+                Customer.LastName,
+                Station.Region,
+                COUNT(*) AS Amount  -- Cuenta el número de compras por cliente y región
+            FROM
+                Customer
+            JOIN
+                Product ON Customer.Customerid = Product.Customerid
+            JOIN
+                Station ON Product.Stationid = Station.Stationid
+            WHERE
+                Station.Region IN ('MX', 'USA')  -- Filtra por las regiones MX y USA
+            GROUP BY
+                Customer.Name, Customer.LastName, Station.Region
+        ),
+        TopCustomers AS (
+            SELECT
+                *,
+                RANK() OVER (PARTITION BY Region ORDER BY Amount DESC) AS Rank  -- Asigna un rango basado en el número de compras
+            FROM
+                PurchasesCount
+        )
+        SELECT DISTINCT
+            Name,
+            LastName,
+            Region,
+            Amount
+        FROM
+            TopCustomers
+        WHERE
+            Rank = 1;  -- Selecciona solo el cliente con el rango más alto (más compras) en cada región
+        """
 
-query3 = """
-SELECT DISTINCT
-    Station.Region,
-    COUNT(DISTINCT Product.ProductID) AS NumberOfProducts,
-    COUNT(DISTINCT Customer.Customerid) AS NumberOfCustomers,
-    SUM(Product.Amount) AS TotalAmount
-FROM
-    Customer
-JOIN
-    Product ON Customer.Customerid = Product.Customerid
-JOIN
-    Station ON Product.Stationid = Station.Stationid
-GROUP BY
-    Station.Region;
-"""
+    # Query 2: Obtiene los correos electrónicos únicos de las clientes mujeres que han comprado productos con un valor superior a 100
+    query2 = """
+        SELECT DISTINCT
+            Customer.Email
+        FROM
+            Customer
+        JOIN
+            Product ON Customer.Customerid = Product.Customerid
+        WHERE
+            Customer.Gender = 1  -- Filtra por clientes mujeres
+            AND Product.Amount > 100;  -- Filtra por productos con un valor superior a 100
+        """
 
-# Ejecutar las consultas y obtener los resultados
-result1 = pd.read_sql(query1, conn)
-result2 = pd.read_sql(query2, conn)
-result3 = pd.read_sql(query3, conn)
+    # Query 3: Obtiene el número de productos, número de clientes y el total de ventas por región
+    query3 = """
+        SELECT DISTINCT
+            Station.Region,
+            COUNT(DISTINCT Product.ProductID) AS NumberOfProducts,  -- Cuenta el número de productos únicos
+            COUNT(DISTINCT Customer.Customerid) AS NumberOfCustomers,  -- Cuenta el número de clientes únicos
+            SUM(Product.Amount) AS TotalAmount  -- Suma el total de ventas
+        FROM
+            Customer
+        JOIN
+            Product ON Customer.Customerid = Product.Customerid
+        JOIN
+            Station ON Product.Stationid = Station.Stationid
+        GROUP BY
+            Station.Region;  -- Agrupa los resultados por región
+        """
 
-# Mostrar los resultados
+    # Ejecutar las consultas y obtener los resultados
+    result1 = pd.read_sql(query1, conn)
+    result2 = pd.read_sql(query2, conn)
+    result3 = pd.read_sql(query3, conn)
+
+    return result1, result2, result3
+
+# Ejecutar las consultas y mostrar los resultados
+result1, result2, result3 = execute_queries()
 print("Query 1 Result:\n", result1)
 print("\nQuery 2 Result:\n", result2)
 print("\nQuery 3 Result:\n", result3)

@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import json
 import altair as alt
-import plotly.express as px
+import plotly.graph_objects as go
 
 values = []  # Move the declaration and assignment outside of the function
 
@@ -245,7 +245,11 @@ def main():
                 }
             )
             
-            fig = px.bar(chart_data, x='Religión', y='Población', color='Religión')
+            fig = go.Figure(data=[
+                go.Bar(name='Religión', x=chart_data['Religión'], y=chart_data['Población'])
+            ])
+            
+            fig.update_layout(barmode='group')
             
             # Ocultar los nombres de las religiones en el eje x
             fig.update_xaxes(showticklabels=False)
