@@ -2,49 +2,81 @@ import pandas as pd
 import sqlite3
 
 # Cargar el archivo Excel
-file_path = 'SQL_TEST.xlsx'
+file_path = "SQL_TEST.xlsx"
 xls = pd.ExcelFile(file_path)
-
-# Cargar cada hoja del archivo Excel en un DataFrame
-dfs = {sheet_name: xls.parse(sheet_name) for sheet_name in xls.sheet_names}
 
 # Conectar a una base de datos SQLite en memoria
 conn = sqlite3.connect(':memory:')
 
-# Guardar cada DataFrame en la base de datos SQLite
-for sheet_name, df in dfs.items():
-    df.to_sql(sheet_name, conn, index=False, if_exists='replace')
+# Definir las filas donde comienzan y terminan las tablas y las columnas que se deben leer
+table_ranges = {
+    'Customer': ((2, 12), "B:F"),  # La tabla 'Customer comienza en la fila 3 y termina en la fila 13, y las columnas van de B a F
+    'Product': ((2, 24), "I:P"),  # La tabla 'Product' comienza en la fila 3 y termina en la fila 13, y las columnas van de I a P
+    'Station': ((2, 10), "R:T")  # La tabla 'Station' comienza en la fila 3 y termina en la fila 13, y las columnas van de R a T
+}
 
+for table_name, ((start_row, end_row), cols) in table_ranges.items():
+    # Tomar el primer carácter del rango de columnas como la columna del nombre de la tabla
+    table_col = cols[0]
+
+    # Cargar el nombre de la tabla de la celda correcta
+    table_name = xls.parse('SQL', header=None, nrows=1, skiprows=start_row-1, usecols=table_col).iloc[0,0]
+
+    # Verificar que el nombre de la tabla no sea "nan"
+    if pd.isnull(table_name):
+        print(f"El nombre de la tabla en la fila {start_row} es 'nan', se saltará esta tabla.")
+        continue
+
+    # Cargar los nombres de las columnas de la fila siguiente
+    column_names = xls.parse('SQL', header=None, nrows=1, skiprows=start_row, usecols=cols).iloc[0].tolist()
+
+    # Cargar los datos de la tabla
+    df = xls.parse('SQL', header=None, skiprows=start_row+1, nrows=end_row-start_row, usecols=cols)
+
+    # Asignar los nombres de las columnas al DataFrame
+    df.columns = column_names
+
+    # Importar los datos del DataFrame a la tabla en la base de datos SQLite
+    df.to_sql(table_name, conn, if_exists='append', index=False)
+
+'''
 # Verificar las tablas cargadas
 query = "SELECT name FROM sqlite_master WHERE type='table';"
 tables = pd.read_sql(query, conn)
 print(tables)
+'''
 
 # Definir las consultas
 query1 = """
 WITH PurchasesCount AS (
     SELECT
-        Name,
-        LastName,
-        Region,
-        COUNT(*) AS PurchaseCount
+        Customer.Name,
+        Customer.LastName,
+        Station.Region,
+        COUNT(*) AS Amount
     FROM
-        Sales
+        Customer
+    JOIN
+        Product ON Customer.Customerid = Product.Customerid
+    JOIN
+        Station ON Product.Stationid = Station.Stationid
+    WHERE
+        Station.Region IN ('MX', 'USA')
     GROUP BY
-        Name, LastName, Region
+        Customer.Name, Customer.LastName, Station.Region
 ),
 TopCustomers AS (
     SELECT
         *,
-        RANK() OVER (PARTITION BY Region ORDER BY PurchaseCount DESC) AS Rank
+        RANK() OVER (PARTITION BY Region ORDER BY Amount DESC) AS Rank
     FROM
         PurchasesCount
 )
-SELECT
+SELECT DISTINCT
     Name,
     LastName,
     Region,
-    PurchaseCount
+    Amount
 FROM
     TopCustomers
 WHERE
@@ -52,25 +84,31 @@ WHERE
 """
 
 query2 = """
-SELECT
-    Email
+SELECT DISTINCT
+    Customer.Email
 FROM
-    Sales
+    Customer
+JOIN
+    Product ON Customer.Customerid = Product.Customerid
 WHERE
-    Gender = 'Female'
-    AND ProductValue > 100;
+    Customer.Gender = 1
+    AND Product.Amount > 100;
 """
 
 query3 = """
-SELECT
-    Region,
-    COUNT(DISTINCT ProductID) AS NumberOfProducts,
-    COUNT(DISTINCT CustomerID) AS NumberOfCustomers,
-    SUM(ProductValue) AS TotalAmount
+SELECT DISTINCT
+    Station.Region,
+    COUNT(DISTINCT Product.ProductID) AS NumberOfProducts,
+    COUNT(DISTINCT Customer.Customerid) AS NumberOfCustomers,
+    SUM(Product.Amount) AS TotalAmount
 FROM
-    Sales
+    Customer
+JOIN
+    Product ON Customer.Customerid = Product.Customerid
+JOIN
+    Station ON Product.Stationid = Station.Stationid
 GROUP BY
-    Region;
+    Station.Region;
 """
 
 # Ejecutar las consultas y obtener los resultados
