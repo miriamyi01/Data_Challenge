@@ -589,7 +589,7 @@ def main():
         year_list.sort(reverse=True)
 
         # Comprueba si 2020 está en la lista
-        if 2020 in year_list:
+        if '2020' in year_list:
             default_index = year_list.index(2020)
         else:
             default_index = 0  # o cualquier otro valor predeterminado
@@ -628,8 +628,11 @@ def main():
         formatted_births = convert_to_float_and_format(births)
         formatted_deaths = convert_to_float_and_format(deaths)
 
-        # Muestra los valores en las métricas
-        st.metric(label="Población Total", value=formatted_population)
+        if formatted_population != 0:
+            # Muestra los valores en las métricas
+            st.metric(label="Población Total", value=formatted_population)
+        else:
+            st.warning("⚠️ No se dispone de datos sobre el total de población")
 
 
         st.markdown('### MORTALIDAD Y NATALIDAD')
