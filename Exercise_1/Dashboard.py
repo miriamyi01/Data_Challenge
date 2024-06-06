@@ -3,10 +3,9 @@ import requests
 import pandas as pd
 import json
 import altair as alt
-import random
 import plotly.graph_objects as go
 
-    # Function code...
+
 def get_data_from_api(api_key):
     '''
     Retrieves data from the INEGI API.
@@ -402,9 +401,24 @@ def get_nupcial_values(data, year):
     return marriages, divorces
 
 def get_migration_values(data, year):
+    """
+    Calculates the migration values for a given year.
+
+    Args:
+        data (DataFrame): The input data containing migration information.
+        year (int): The year for which to calculate the migration values.
+
+    Returns:
+        tuple: A tuple containing the following migration values:
+            - poblacion_5_anos_inmigrante (int): Total population of immigrants aged 5 years and above.
+            - poblacion_5_anos_emigrante (int): Total population of emigrants aged 5 years and above.
+            - poblacion_nacida_otro_pais_residente_mexico (int): Total population born in another country and residing in Mexico.
+            - poblacion_nacida_otro_pais_residente_mexico_hombres (int): Total population of males born in another country and residing in Mexico.
+            - poblacion_nacida_otro_pais_residente_mexico_mujeres (int): Total population of females born in another country and residing in Mexico.
+    """
     # Comprueba si los datos tienen las columnas necesarias
     if 'Indicator' not in data.columns or 'Number' not in data.columns or 'Year' not in data.columns:
-        return 0, 0, 0
+        return 0, 0, 0, 0, 0
 
     # Filtra los datos para el año seleccionado
     data = data[data['Year'] == year]
@@ -415,9 +429,28 @@ def get_migration_values(data, year):
     poblacion_nacida_otro_pais_residente_mexico_hombres = data[data['Indicator'] == '6200205268']['Number'].sum()
     poblacion_nacida_otro_pais_residente_mexico_mujeres = data[data['Indicator'] == '6200205284']['Number'].sum()
 
-    return poblacion_5_anos_inmigrante, poblacion_5_anos_emigrante, poblacion_nacida_otro_pais_residente_mexico, poblacion_nacida_otro_pais_residente_mexico_hombres, poblacion_nacida_otro_pais_residente_mexico_mujeres
+    return (
+        poblacion_5_anos_inmigrante,
+        poblacion_5_anos_emigrante,
+        poblacion_nacida_otro_pais_residente_mexico,
+        poblacion_nacida_otro_pais_residente_mexico_hombres,
+        poblacion_nacida_otro_pais_residente_mexico_mujeres
+    )
 
 def create_text(plot, align, dy, input_response, input_text):
+    """
+    Create a text mark for a given plot.
+
+    Parameters:
+    - plot: The plot object to add the text mark to.
+    - align: The alignment of the text mark.
+    - dy: The vertical offset of the text mark.
+    - input_response: The input response value to be displayed as text.
+    - input_text: The input text value used for filtering.
+
+    Returns:
+    - The plot object with the text mark added.
+    """
     input_response = str(int(round(float(input_response))))
     return plot.mark_text(
         align=align,
@@ -433,6 +466,20 @@ def create_text(plot, align, dy, input_response, input_text):
 
 
 def make_donut(input_response1, input_text1, input_color1, input_response2, input_text2, input_color2):
+    """
+    Creates a donut chart with two topics and their corresponding values.
+
+    Parameters:
+    input_response1 (float): The value for the first topic.
+    input_text1 (str): The label for the first topic.
+    input_color1 (str): The color for the first topic.
+    input_response2 (float): The value for the second topic.
+    input_text2 (str): The label for the second topic.
+    input_color2 (str): The color for the second topic.
+
+    Returns:
+    alt.Chart: The donut chart with the two topics and their values.
+    """
 
     chart_color = [input_color1, input_color2]
         
@@ -457,6 +504,23 @@ def make_donut(input_response1, input_text1, input_color1, input_response2, inpu
 
 
 def format_number(num):
+    """
+    Formats a number for display.
+
+    Args:
+        num (int): The number to be formatted.
+
+    Returns:
+        str: The formatted number.
+
+    Examples:
+        >>> format_number(1000000)
+        '1 M'
+        >>> format_number(1500000)
+        '1.5 M'
+        >>> format_number(5000)
+        '5 K'
+    """
     if num > 1000000:
         if not num % 1000000:
             return f'{num // 1000000} M'
@@ -464,9 +528,27 @@ def format_number(num):
     return f'{num // 1000} K'
 
 def convert_to_float_and_format(data):
+    """
+    Converts the given data to a float and formats it.
+
+    Args:
+        data: The data to be converted and formatted.
+
+    Returns:
+        The converted and formatted data.
+    """
     return format_number(float(data))
 
 def calculate_percentage(data):
+    """
+    Calculates the percentage of a given data.
+
+    Parameters:
+    data (float): The data for which the percentage needs to be calculated.
+
+    Returns:
+    float: The percentage of the given data, rounded to 2 decimal places.
+    """
     return round(float(data), 2)
 
 
