@@ -1,6 +1,5 @@
 streamlit
 requests
-pandas
-json
+pandas==1.2.5
 altair
 plotly
