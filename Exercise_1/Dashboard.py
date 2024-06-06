@@ -681,7 +681,7 @@ def main():
         st.markdown('### GÉNERO')
     
         # Crea el gráfico de donut para la población masculina y femenina
-        donut_chart = make_donut(male_percentage, 'Población masculina', 'rgba(58, 166, 185, 0.6)', female_percentage, 'Población femenina', 'rgba(255, 158, 170, 0.6)')
+        donut_chart = make_donut(male_percentage, 'Población masculina', 'rgba(58, 166, 185, 0.8)', female_percentage, 'Población femenina', 'rgba(255, 158, 170, 0.8)')
         if male_percentage != 0 and female_percentage != 0:
             st.altair_chart(donut_chart)
         else:
@@ -719,8 +719,8 @@ def main():
             # Crear la gráfica de barras
             fig = go.Figure(data=[
                 go.Bar(name='Población', x=migration_data['Tipo'], y=migration_data['Población'], marker_color='rgba(199, 56, 189, 0.6)', width=[0.8, 0.8]),
-                go.Bar(name='Población masculina', x=migration_data['Tipo'], y=migration_data['Población masculina'], marker_color='rgba(58, 166, 185, 0.6)'),
-                go.Bar(name='Población femenina', x=migration_data['Tipo'], y=migration_data['Población femenina'], marker_color='rgb(255, 158, 170, 0.6)')
+                go.Bar(name='Población masculina', x=migration_data['Tipo'], y=migration_data['Población masculina'], marker_color='rgba(58, 166, 185, 0.8)'),
+                go.Bar(name='Población femenina', x=migration_data['Tipo'], y=migration_data['Población femenina'], marker_color='rgb(255, 158, 170, 0.8)')
             ])
             
             # Actualizar el layout para apilar las barras
@@ -762,10 +762,10 @@ def main():
             
             # Crear una lista de colores única para cada religión
             colors = {
-                'Inespecífica': 'rgba(195, 255, 147, 0.6)',  # Rojo
-                'Católica': 'rgba(255, 219, 92, 0.6)',  # Verde
-                'Diferente': 'rgba(255, 175, 97, 0.6)',  # Azul
-                'Sin religión': 'rgba(255, 112, 171, 0.6)'  # Amarillo
+                'Inespecífica': 'rgba(195, 255, 147, 0.8)',  # Rojo
+                'Católica': 'rgba(255, 219, 92, 0.8)',  # Verde
+                'Diferente': 'rgba(255, 175, 97, 0.8)',  # Azul
+                'Sin religión': 'rgba(255, 112, 171, 0.8)'  # Amarillo
             }
 
             fig = go.Figure(data=[
@@ -854,8 +854,8 @@ def main():
             # Crear la gráfica de barras
             fig = go.Figure(data=[
                 go.Bar(name='Población', x=age_data['Edad'], y=age_data['Población'], marker_color='rgba(253, 255, 194, 0.5)'),
-                go.Scatter(name='Población masculina', x=age_data['Edad'], y=age_data['Población masculina'], mode='lines', line=dict(color='rgba(58, 166, 185, 0.6)', width=5)),
-                go.Scatter(name='Población femenina', x=age_data['Edad'], y=age_data['Población femenina'], mode='lines', line=dict(color='rgba(255, 158, 170, 0.6)', width=5))
+                go.Scatter(name='Población masculina', x=age_data['Edad'], y=age_data['Población masculina'], mode='lines', line=dict(color='rgba(58, 166, 185, 1)', width=5)),
+                go.Scatter(name='Población femenina', x=age_data['Edad'], y=age_data['Población femenina'], mode='lines', line=dict(color='rgba(255, 158, 170, 1)', width=5))
             ])
             
             # Cambiar el modo de la gráfica a 'group'
@@ -883,7 +883,7 @@ def main():
             marriages_percentage = round((marriages / total) * 100, 2)
             divorces_percentage = round((divorces / total) * 100, 2)
 
-            donut_chart = make_donut(marriages_percentage, 'Matrimonios', 'rgba(0, 223, 162, 0.6)', divorces_percentage, 'Divorcios', 'rgba(175, 71, 210, 0.6)')
+            donut_chart = make_donut(marriages_percentage, 'Matrimonios', 'rgba(0, 223, 162, 0.8)', divorces_percentage, 'Divorcios', 'rgba(175, 71, 210, 0.8)')
 
             data = {"Matrimonios": [marriages], "Divorcios": [divorces]}
             df = pd.DataFrame(data)
