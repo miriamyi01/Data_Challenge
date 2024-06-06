@@ -100,6 +100,7 @@ def get_data_from_api(api_key):
 
     6200240337 - Relación divorcios - matrimonios
 
+
     6200205259 - Población nacida en otro país residente en México
     6200205268 - Población nacida en otro país residente en México hombres
     6200205284 - Población nacida en otro país residente en México mujeres
@@ -551,6 +552,25 @@ def calculate_percentage(data):
     """
     return round(float(data), 2)
 
+def clean_number(number_str):
+    """
+    Cleans a number string by removing any extra characters and converting it to a float.
+
+    Args:
+        number_str (str or int or float): The number string to be cleaned.
+
+    Returns:
+        float: The cleaned number as a float.
+
+    """
+    # Check if number_str is a string
+    if not isinstance(number_str, str):
+        number_str = str(number_str)
+        
+    # Split the string by space and keep only the first part
+    number_str = number_str.split()[0]
+    return float(number_str)
+
 
 def main():
     """
@@ -583,10 +603,15 @@ def main():
 
     with st.sidebar:
         st.title('👤 México Población - Dashboard')
-        
+            
         # Crea una lista de todos los años únicos en los datos
         year_list = list(set(data_dict['Year'] for data_dict in data_list))
-        year_list.sort(reverse=True)
+        year_list.sort()
+
+        # Asegúrar de que 2020 esté en la posición correcta en la lista
+        if 2020 in year_list:
+            year_list.remove(2020)
+            year_list.insert(2, 2020)
 
         # Crea un cuadro de selección para el año
         selected_year = st.selectbox('Selecciona el año', year_list)
@@ -844,25 +869,25 @@ def main():
         marriages, divorces = get_nupcial_values(data, selected_year)
         
         st.markdown('### NUPCIALIDAD')
+        if marriages != 0 and divorces != 0:
+            marriages = clean_number(marriages)
+            divorces = clean_number(divorces)
+            total = marriages + divorces
 
-        def clean_number(number_str):
-            # Split the string by space and keep only the first part
-            number_str = number_str.split()[0]
-            return float(number_str)
+            marriages_percentage = round((marriages / total) * 100, 2)
+            divorces_percentage = round((divorces / total) * 100, 2)
 
-        marriages = clean_number(marriages)
-        divorces = clean_number(divorces)
-        total = marriages + divorces
+            donut_chart = make_donut(marriages_percentage, 'Matrimonios', 'rgb(0, 223, 162)', divorces_percentage, 'Divorcios', 'rgb(175, 71, 210)')
 
-        marriages_percentage = round((marriages / total) * 100, 2)
-        divorces_percentage = round((divorces / total) * 100, 2)
-    
-        # Crea el gráfico de donut para la población masculina y femenina
-        donut_chart = make_donut(marriages_percentage, 'Matrimonios', 'rgb(0, 223, 162)', divorces_percentage, 'Divorcios', 'rgb(175, 71, 210)')
-        if marriages_percentage != 0 and divorces_percentage != 0:
-            st.altair_chart(donut_chart)
+            data = {"Matrimonios": [marriages], "Divorcios": [divorces]}
+            df = pd.DataFrame(data)
+
+            col1, col2 = st.columns(2)
+            col1.altair_chart(donut_chart)
+            col2.dataframe(df, hide_index=True)
+
         else:
-            st.warning("⚠️ No se dispone de datos sobre los datos nupciales")
+            st.warning("⚠️ No se dispone de datos nupciales")
                 
 if __name__ == "__main__":
     main()
