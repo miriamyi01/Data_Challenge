@@ -589,7 +589,7 @@ def main():
         year_list.sort(reverse=True)
 
         # Crea un cuadro de selección para el año
-        selected_year = st.selectbox('Selecciona el año', year_list)
+        selected_year = st.selectbox('Selecciona el año', year_list, index=year_list.index(2020))
 
         # Filtra los datos para el año seleccionado
         selected_data = [data_dict for data_dict in data_list if data_dict['Year'] == selected_year]
