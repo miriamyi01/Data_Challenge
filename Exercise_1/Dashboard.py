@@ -100,6 +100,12 @@ def get_data_from_api(api_key):
     1002000030 - Defunicaciones registradas
 
     6200240337 - Relación divorcios - matrimonios
+
+    6200205259 - Población nacida en otro país residente en México
+    6200205268 - Población nacida en otro país residente en México hombres
+    6200205284 - Población nacida en otro país residente en México mujeres
+    6200205277 - Población de 5 años y más emigrante
+    6200205252 - Población de 5 años y más inmigrante
     '''
 
     # Datos relacionados con la cantidad de población
@@ -117,7 +123,8 @@ def get_data_from_api(api_key):
                    '1002000100', '1002000101', '1002000102', '1002000103', '1002000104', '1002000105', 
                    '1002000106', '1002000107', '1002000108', '1002000109', '1002000110', '1002000111', 
                    '1002000112', '1002000113', '1002000114', '1002000115', '1002000116', '1002000117', 
-                   '1002000118', '1002000119', '1002000120'] # Edad y migracion
+                   '1002000118', '1002000119', '1002000120', '6200205259', '6200205268', '6200205284',
+                   '6200205277', '6200205252'] # Edad y migracion
 
     # Divide los indicadores en grupos de 5
     grupos_indicadores = [indicadores[i:i + 11] for i in range(0, len(indicadores), 11)]
@@ -394,6 +401,21 @@ def get_nupcial_values(data, year):
 
     return marriages, divorces
 
+def get_migration_values(data, year):
+    # Comprueba si los datos tienen las columnas necesarias
+    if 'Indicator' not in data.columns or 'Number' not in data.columns or 'Year' not in data.columns:
+        return 0, 0, 0
+
+    # Filtra los datos para el año seleccionado
+    data = data[data['Year'] == year]
+
+    poblacion_5_anos_inmigrante = data[data['Indicator'] == '6200205252']['Number'].sum()
+    poblacion_5_anos_emigrante = data[data['Indicator'] == '6200205277']['Number'].sum()
+    poblacion_nacida_otro_pais_residente_mexico = data[data['Indicator'] == '6200205259']['Number'].sum()
+    poblacion_nacida_otro_pais_residente_mexico_hombres = data[data['Indicator'] == '6200205268']['Number'].sum()
+    poblacion_nacida_otro_pais_residente_mexico_mujeres = data[data['Indicator'] == '6200205284']['Number'].sum()
+
+    return poblacion_5_anos_inmigrante, poblacion_5_anos_emigrante, poblacion_nacida_otro_pais_residente_mexico, poblacion_nacida_otro_pais_residente_mexico_hombres, poblacion_nacida_otro_pais_residente_mexico_mujeres
 
 def create_text(plot, align, dy, input_response, input_text):
     input_response = str(int(round(float(input_response))))
@@ -428,8 +450,8 @@ def make_donut(input_response1, input_text1, input_color1, input_response2, inpu
                         legend=None),
     ).properties(width=150, height=150)
     
-    text1 = create_text(plot, 'right', -10, input_response1, input_text1)
-    text2 = create_text(plot, 'left', 10, input_response2, input_text2)
+    text1 = create_text(plot, 'right', 10, input_response1, input_text1)
+    text2 = create_text(plot, 'left', -10, input_response2, input_text2)
 
     return plot + text1 + text2
 
@@ -564,28 +586,41 @@ def main():
         data = pd.DataFrame(selected_data)
 
         inespecific_religion, catolical_religion, diferent_religion, no_religion, catholic_population, uncatolical_population = get_religion_values(data, selected_year)
-        marriages, divorces = get_nupcial_values(data, selected_year)
+
+        poblacion_5_anos_inmigrante, poblacion_5_anos_emigrante, poblacion_nacida_otro_pais_residente_mexico, poblacion_nacida_otro_pais_residente_mexico_hombres, poblacion_nacida_otro_pais_residente_mexico_mujeres = get_migration_values(data, selected_year)
         
-        st.markdown('### NUPCIALIDAD')
+        st.markdown('### MIGRACIÓN')
 
-        def clean_number(number_str):
-            # Split the string by space and keep only the first part
-            number_str = number_str.split()[0]
-            return float(number_str)
+        if poblacion_5_anos_inmigrante != 0 and poblacion_5_anos_emigrante != 0 and poblacion_nacida_otro_pais_residente_mexico != 0 and poblacion_nacida_otro_pais_residente_mexico_hombres != 0 and poblacion_nacida_otro_pais_residente_mexico_mujeres != 0:
+            migration_data = pd.DataFrame(
+                {
+                    "Tipo": ["Inmigrantes", "Emigrantes", "Residentes en México"],
+                    "Población": [poblacion_5_anos_inmigrante, poblacion_5_anos_emigrante, poblacion_nacida_otro_pais_residente_mexico],
+                    "Población masculina": [0, 0, poblacion_nacida_otro_pais_residente_mexico_hombres],
+                    "Población femenina": [0, 0, poblacion_nacida_otro_pais_residente_mexico_mujeres],
+                }
+            )
+            
+            # Crear la gráfica de barras
+            fig = go.Figure(data=[
+                go.Bar(name='Población', x=migration_data['Tipo'], y=migration_data['Población'], marker_color='rgba(199, 56, 189, 0.5)', width=[0.8, 0.8]),
+                go.Bar(name='Población masculina', x=migration_data['Tipo'], y=migration_data['Población masculina'], marker_color='rgb(58, 166, 185)'),
+                go.Bar(name='Población femenina', x=migration_data['Tipo'], y=migration_data['Población femenina'], marker_color='rgb(255, 158, 170)')
+            ])
+            
+            # Actualizar el layout para apilar las barras
+            fig.update_layout(barmode='group')
+            
+            # Redimensionar el gráfico
+            fig.update_layout(autosize=False, width=300, height=200, margin=dict(t=0))
+        
+            # Quitar la leyenda
+            fig.update_layout(showlegend=False)
+            
+            st.plotly_chart(fig)
 
-        marriages = clean_number(marriages)
-        divorces = clean_number(divorces)
-        total = marriages + divorces
-
-        marriages_percentage = round((marriages / total) * 100, 2)
-        divorces_percentage = round((divorces / total) * 100, 2)
-    
-        # Crea el gráfico de donut para la población masculina y femenina
-        donut_chart = make_donut(marriages_percentage, 'Matrimonios', 'rgb(0, 223, 162)', divorces_percentage, 'Divorcios', 'rgb(175, 71, 210)')
-        if marriages_percentage != 0 and divorces_percentage != 0:
-            st.altair_chart(donut_chart)
         else:
-            st.warning("⚠️ No se dispone de datos sobre los datos nupciales")
+            st.warning(" ⚠️ No se dispone de datos migratorios")
 
 
         st.markdown('### RELIGIÓN')
@@ -711,7 +746,7 @@ def main():
             fig.update_layout(barmode='group')
             
             # Redimensionar el gráfico
-            fig.update_layout(autosize=False, width=300, height=600, margin=dict(t=0))
+            fig.update_layout(autosize=False, width=300, height=400, margin=dict(t=0))
         
             # Quitar la leyenda
             fig.update_layout(showlegend=False)
@@ -719,6 +754,30 @@ def main():
             st.plotly_chart(fig)
         else:
             st.warning(" ⚠️ No se dispone de datos sobre edad de las personas")
+        
+
+        marriages, divorces = get_nupcial_values(data, selected_year)
+        
+        st.markdown('### NUPCIALIDAD')
+
+        def clean_number(number_str):
+            # Split the string by space and keep only the first part
+            number_str = number_str.split()[0]
+            return float(number_str)
+
+        marriages = clean_number(marriages)
+        divorces = clean_number(divorces)
+        total = marriages + divorces
+
+        marriages_percentage = round((marriages / total) * 100, 2)
+        divorces_percentage = round((divorces / total) * 100, 2)
+    
+        # Crea el gráfico de donut para la población masculina y femenina
+        donut_chart = make_donut(marriages_percentage, 'Matrimonios', 'rgb(0, 223, 162)', divorces_percentage, 'Divorcios', 'rgb(175, 71, 210)')
+        if marriages_percentage != 0 and divorces_percentage != 0:
+            st.altair_chart(donut_chart)
+        else:
+            st.warning("⚠️ No se dispone de datos sobre los datos nupciales")
                 
 if __name__ == "__main__":
     main()
