@@ -528,6 +528,7 @@ def format_number(num):
         return f'{round(num / 1000000, 1)} M'
     return f'{num // 1000} K'
 
+
 def convert_to_float_and_format(data):
     """
     Converts the given data to a float and formats it.
@@ -539,6 +540,7 @@ def convert_to_float_and_format(data):
         The converted and formatted data.
     """
     return format_number(float(data))
+
 
 def calculate_percentage(data):
     """
@@ -570,6 +572,7 @@ def clean_number(number_str):
     # Split the string by space and keep only the first part
     number_str = number_str.split()[0]
     return float(number_str)
+
 
 
 def main():
@@ -626,6 +629,8 @@ def main():
             # st.write(f"Year: {data_dict['Year']}, Number: {number}, Indicator: {data_dict['Indicator']}")
 
     col = st.columns((1, 1, 1), gap='medium')
+
+
 
     with col[0]:
         # Convierte selected_data en un DataFrame de pandas
@@ -786,6 +791,7 @@ def main():
             st.warning(" ⚠️ No se dispone de datos sobre las preferencias religiosas de las personas")
 
 
+
     with col[2]:
         # Convierte selected_data en un DataFrame de pandas
         data = pd.DataFrame(selected_data)
@@ -888,6 +894,7 @@ def main():
 
         else:
             st.warning("⚠️ No se dispone de datos nupciales")
-                
+    
+              
 if __name__ == "__main__":
     main()
