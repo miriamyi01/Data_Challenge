@@ -589,7 +589,7 @@ def main():
         year_list.sort(reverse=True)
 
         # Comprueba si 2020 está en la lista
-        if '2020' in year_list:
+        if 2020 in year_list:
             default_index = year_list.index(2020)
         else:
             default_index = 0  # o cualquier otro valor predeterminado
