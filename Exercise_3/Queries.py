@@ -52,7 +52,43 @@ def execute_queries():
     # Definir las consultas
     # Query 1: Obtiene el nombre y apellido del cliente que ha realizado más compras en cada región (MX y USA)
     query1 = """
-
+        WITH PurchaseCounts AS (
+            SELECT 
+                Customer.Customerid,
+                Customer.Name,
+                Customer.LastName,
+                Station.Region,
+                COUNT(Product.ProductID) AS PurchaseCount
+            FROM 
+                Customer
+            JOIN 
+                Product ON Customer.Customerid = Product.Customerid
+            JOIN 
+                Station ON Product.Stationid = Station.Stationid
+            GROUP BY 
+                Customer.Customerid,
+                Customer.Name,
+                Customer.LastName,
+                Station.Region
+        ),
+        MaxPurchases AS (
+            SELECT 
+                Region,
+                MAX(PurchaseCount) AS MaxPurchaseCount
+            FROM 
+                PurchaseCounts
+            GROUP BY 
+                Region
+        )
+        SELECT 
+            PurchaseCounts.Name,
+            PurchaseCounts.LastName,
+            PurchaseCounts.Region,
+            PurchaseCounts.PurchaseCount
+        FROM 
+            PurchaseCounts
+        JOIN 
+            MaxPurchases ON PurchaseCounts.Region = MaxPurchases.Region AND PurchaseCounts.PurchaseCount = MaxPurchases.MaxPurchaseCount;
         """
 
     # Query 2: Obtiene los correos electrónicos únicos de las clientes mujeres que han comprado productos con un valor superior a 100
