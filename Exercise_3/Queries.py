@@ -52,39 +52,7 @@ def execute_queries():
     # Definir las consultas
     # Query 1: Obtiene el nombre y apellido del cliente que ha realizado más compras en cada región (MX y USA)
     query1 = """
-        WITH PurchasesCount AS (
-            SELECT
-                Customer.Name,
-                Customer.LastName,
-                Station.Region,
-                COUNT(*) AS Amount  -- Cuenta el número de compras por cliente y región
-            FROM
-                Customer
-            JOIN
-                Product ON Customer.Customerid = Product.Customerid
-            JOIN
-                Station ON Product.Stationid = Station.Stationid
-            WHERE
-                Station.Region IN ('MX', 'USA')  -- Filtra por las regiones MX y USA
-            GROUP BY
-                Customer.Name, Customer.LastName, Station.Region
-        ),
-        TopCustomers AS (
-            SELECT
-                *,
-                RANK() OVER (PARTITION BY Region ORDER BY Amount DESC) AS Rank  -- Asigna un rango basado en el número de compras
-            FROM
-                PurchasesCount
-        )
-        SELECT DISTINCT
-            Name,
-            LastName,
-            Region,
-            Amount
-        FROM
-            TopCustomers
-        WHERE
-            Rank = 1;  -- Selecciona solo el cliente con el rango más alto (más compras) en cada región
+
         """
 
     # Query 2: Obtiene los correos electrónicos únicos de las clientes mujeres que han comprado productos con un valor superior a 100
