@@ -54,41 +54,48 @@ def execute_queries():
     query1 = """
         WITH PurchaseCounts AS (
             SELECT 
-                Customer.Customerid,
-                Customer.Name,
-                Customer.LastName,
-                Station.Region,
+                Customer.Name, 
+                Customer.LastName, 
+                Station.Region, 
                 COUNT(Product.ProductID) AS PurchaseCount
             FROM 
                 Customer
             JOIN 
-                Product ON Customer.Customerid = Product.Customerid
+                Product ON Customer.CustomerID = Product.CustomerID
             JOIN 
-                Station ON Product.Stationid = Station.Stationid
+                Station ON Product.StationID = Station.StationID
             GROUP BY 
-                Customer.Customerid,
-                Customer.Name,
-                Customer.LastName,
-                Station.Region
+                Customer.CustomerID, Station.Region
         ),
         MaxPurchases AS (
             SELECT 
-                Region,
+                Region, 
                 MAX(PurchaseCount) AS MaxPurchaseCount
             FROM 
                 PurchaseCounts
             GROUP BY 
                 Region
+        ),
+        TopCustomers AS (
+            SELECT 
+                PurchaseCounts.Name, 
+                PurchaseCounts.LastName, 
+                PurchaseCounts.Region,
+                ROW_NUMBER() OVER(PARTITION BY PurchaseCounts.Region ORDER BY PurchaseCounts.PurchaseCount DESC) AS Rank
+            FROM 
+                PurchaseCounts
+            JOIN 
+                MaxPurchases ON PurchaseCounts.Region = MaxPurchases.Region 
+                              AND PurchaseCounts.PurchaseCount = MaxPurchases.MaxPurchaseCount
         )
         SELECT 
-            PurchaseCounts.Name,
-            PurchaseCounts.LastName,
-            PurchaseCounts.Region,
-            PurchaseCounts.PurchaseCount
+            Name, 
+            LastName, 
+            Region
         FROM 
-            PurchaseCounts
-        JOIN 
-            MaxPurchases ON PurchaseCounts.Region = MaxPurchases.Region AND PurchaseCounts.PurchaseCount = MaxPurchases.MaxPurchaseCount;
+            TopCustomers
+        WHERE 
+            Rank = 1;
         """
 
     # Query 2: Obtiene los correos electrónicos únicos de las clientes mujeres que han comprado productos con un valor superior a 100
